@@ -66,7 +66,15 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
-
+        # Calculate the equal weight for each asset
+        equal_weight = 1 / len(assets)
+        
+        # Assign equal weights to each asset, excluding the specified asset
+        for asset in assets:
+            self.portfolio_weights[asset] = equal_weight
+        
+        # Ensure the excluded asset's weight is set to 0
+        self.portfolio_weights[self.exclude] = 0
         """
         TODO: Complete Task 1 Above
         """
@@ -117,7 +125,21 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
+        # Calculate rolling standard deviation for each asset over the specified lookback period
+        rolling_std = df_returns.iloc[1:,1:].rolling(window=self.lookback).std().shift(1)
+        
+        # Calculate inverse volatility for each asset
+        inverse_volatility = 1 / rolling_std
 
+        # Calculate the sum of inverse volatilities for normalization
+        sum_inverse_volatility = inverse_volatility.sum(axis=1)
+
+        # Calculate the weights for each asset based on inverse volatility
+        for asset in assets:
+            self.portfolio_weights[asset] = inverse_volatility[asset] / sum_inverse_volatility
+        
+        # Ensure the excluded asset's weight is set to 0
+        self.portfolio_weights[self.exclude] = 0
         """
         TODO: Complete Task 2 Above
         """
@@ -193,8 +215,9 @@ class MeanVariancePortfolio:
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
                 w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
-
+                # model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                model.setObjective(mu @ w - (0.5*gamma)*(w@Sigma@w), gp.GRB.MAXIMIZE)
+                model.addConstr(w.sum()==1)
                 """
                 TODO: Complete Task 3 Below
                 """
